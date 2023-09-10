@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 	"text/template"
 )
 
@@ -21,20 +20,17 @@ var CmdHook = &Cmd{
 	Action: actionSimple(cmdHookAction),
 }
 
-func cmdHookAction(_ Env, args []string) (err error) {
+func cmdHookAction(env Env, args []string) (err error) {
 	var target string
 
 	if len(args) > 1 {
 		target = args[1]
 	}
 
-	selfPath, err := os.Executable()
+	selfPath, err := SelfPath(env)
 	if err != nil {
 		return err
 	}
-
-	// Convert Windows path if needed
-	selfPath = strings.Replace(selfPath, "\\", "/", -1)
 	ctx := HookContext{selfPath}
 
 	shell := DetectShell(target)

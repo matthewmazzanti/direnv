@@ -79,6 +79,20 @@ func expandTildePath(path string) (pathExpanded string) {
 	return pathExpanded
 }
 
+func SelfPath(env Env) (string, error) {
+	selfPath := env[DIRENV_SELF_PATH]
+	var err error
+	if selfPath == "" {
+		if selfPath, err = os.Executable(); err != nil {
+			return "", err
+		}
+	}
+
+	// Fix for mingsys
+	selfPath = strings.Replace(selfPath, "\\", "/", -1)
+	return selfPath, nil
+}
+
 // LoadConfig opens up the direnv configuration from the Env.
 func LoadConfig(env Env) (config *Config, err error) {
 	config = &Config{
@@ -94,14 +108,12 @@ func LoadConfig(env Env) (config *Config, err error) {
 		return
 	}
 
-	var exePath string
-	if exePath, err = os.Executable(); err != nil {
-		err = fmt.Errorf("LoadConfig() os.Executable() failed: %w", err)
+	var selfPath string
+	if selfPath, err = SelfPath(env); err != nil {
+		err = fmt.Errorf("LoadConfig() SelfPath() failed: %w", err)
 		return
 	}
-	// Fix for mingsys
-	exePath = strings.Replace(exePath, "\\", "/", -1)
-	config.SelfPath = exePath
+	config.SelfPath = selfPath
 
 	if config.WorkDir, err = os.Getwd(); err != nil {
 		err = fmt.Errorf("LoadConfig() Getwd failed: %w", err)
