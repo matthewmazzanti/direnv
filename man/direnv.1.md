@@ -83,7 +83,7 @@ Add the following line at the end of the `$XDG_CONFIG_HOME/fish/config.fish` fil
 direnv hook fish | source
 ```
 
-Fish supports 3 modes you can set with with the global environment variable `direnv_fish_mode`:
+Fish supports 3 modes you can set with the global environment variable `direnv_fish_mode`:
 
 ```fish
 set -g direnv_fish_mode eval_on_arrow    # trigger direnv at prompt, and on every arrow-based directory change (default)
@@ -105,10 +105,11 @@ eval `direnv hook tcsh`
 Run:
 
 ```
-$> direnv hook elvish > ~/.elvish/lib/direnv.elv
+~> mkdir -p ~/.config/elvish/lib
+~> direnv hook elvish > ~/.config/elvish/lib/direnv.elv
 ```
 
-and add the following line to your `~/.elvish/rc.elv` file:
+and add the following line to your `~/.config/elvish/rc.elv` file:
 
 ```
 use direnv

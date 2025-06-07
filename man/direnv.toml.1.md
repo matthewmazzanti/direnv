@@ -44,6 +44,8 @@ If set to `true`, stdin is disabled (redirected to /dev/null) during the `.envrc
 
 ### `load_dotenv`
 
+> direnv >= 2.31.0 is required
+
 If set to `true`, also look for and load `.env` files on top of the `.envrc` files. If both `.envrc` and `.env` files exist, the `.envrc` will always be chosen first.
 
 ### `strict_env`
@@ -67,6 +69,18 @@ Will be overwritten if the environment variable `DIRENV_WARN_TIMEOUT` is set to 
 
 Set to `true` to hide the diff of the environment variables when loading the
 `.envrc`. Defaults to `false`.
+
+### `log_format`
+
+Sets the log format for direnv outputs. Set to "-" to disable normal logging.
+
+> direnv >= 2.36.0 is required
+
+### `log_filter`
+
+A Regexp that can be used to filter out some of the logs.
+
+> direnv >= 2.36.0 is required
 
 ## [whitelist]
 

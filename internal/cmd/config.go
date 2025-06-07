@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,6 +28,9 @@ type Config struct {
 	DisableStdin    bool
 	StrictEnv       bool
 	LoadDotenv      bool
+	LogFormat       string
+	LogFilter       *regexp.Regexp
+	LogColor        bool
 	WarnTimeout     time.Duration
 	WhitelistPrefix []string
 	WhitelistExact  map[string]bool
@@ -56,6 +60,8 @@ type tomlGlobal struct {
 	LoadDotenv   bool          `toml:"load_dotenv"`
 	WarnTimeout  *tomlDuration `toml:"warn_timeout"`
 	HideEnvDiff  bool          `toml:"hide_env_diff"`
+	LogFormat    string        `toml:"log_format"`
+	LogFilter    string        `toml:"log_filter"`
 }
 
 type tomlWhitelist struct {
@@ -115,13 +121,17 @@ func LoadConfig(env Env) (config *Config, err error) {
 	}
 	config.SelfPath = selfPath
 
-	if config.WorkDir, err = os.Getwd(); err != nil {
-		err = fmt.Errorf("LoadConfig() Getwd failed: %w", err)
-		return
+	var wdErr error
+	if config.WorkDir, wdErr = os.Getwd(); wdErr != nil {
+		// handled by `findEnvUp`
+		return //nolint:nilnesserr
 	}
 
 	// Default Warn Timeout
 	config.WarnTimeout = 5 * time.Second
+
+	// Default log format
+	config.LogFormat = defaultLogFormat
 
 	config.RCFile = env[DIRENV_FILE]
 
@@ -152,6 +162,24 @@ func LoadConfig(env Env) (config *Config, err error) {
 			return
 		}
 
+		config.LogColor = !(os.Getenv("TERM") == "dumb")
+
+		format, ok := env["DIRENV_LOG_FORMAT"]
+		if ok {
+			config.LogFormat = format
+		} else if global.LogFormat != "" {
+			config.LogFormat = global.LogFormat
+		}
+
+		if global.LogFilter != "" {
+			filterRegexp, err := regexp.Compile(global.LogFilter)
+			if err != nil {
+				err = fmt.Errorf("error in log filter: %w", err)
+				return nil, err
+			}
+			config.LogFilter = filterRegexp
+		}
+
 		config.HideEnvDiff = tomlConf.HideEnvDiff
 
 		for _, path := range tomlConf.Whitelist.Prefix {
@@ -167,7 +195,7 @@ func LoadConfig(env Env) (config *Config, err error) {
 		}
 
 		if tomlConf.SkipDotenv {
-			logError("skip_dotenv has been inverted to load_dotenv.")
+			logError(config, "skip_dotenv has been inverted to load_dotenv.")
 		}
 
 		config.BashPath = tomlConf.BashPath
@@ -184,7 +212,7 @@ func LoadConfig(env Env) (config *Config, err error) {
 		if err == nil {
 			config.WarnTimeout = timeout
 		} else {
-			logError("invalid DIRENV_WARN_TIMEOUT: " + err.Error())
+			logError(config, "invalid DIRENV_WARN_TIMEOUT: "+err.Error())
 		}
 	}
 
